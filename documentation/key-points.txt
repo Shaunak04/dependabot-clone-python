@@ -1,0 +1,6 @@
+1. Pandas is faster for larger inputs (>1000 rows), else CSV module is better
+2. Works equally well for larger inputs (Frameworks, dependencies chosen such that larger inputs supported)
+3. Works for updating/ tracking more than one package/dependency
+4. Works with private repositories as well
+5. For the tracking command, we don't clone the repo (to save space and data)
+6. For updating, Clone a repo locally, create a new branch in the name of "de-py-ndency bot" and make a PR
