@@ -1,0 +1,4 @@
+name,repo,tracking_status,satisfy
+dyte-react-sample-app,https://github.com/dyte-in/react-sample-ap/,invalid url,False
+dyte-js-sample-app,https://github.com/dyte-in/javascript-sample-app,successfull connection,False
+dyte-sample-app-backend,https://github.com/dyte-in/backend-sample-app,successfull connection,True
