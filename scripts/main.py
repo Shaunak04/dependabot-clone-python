@@ -68,7 +68,7 @@ class Wrapper:
                             satisfy = [True for _ in range(rows)]
                             status = [True for _ in range(rows)]
                             bad_pkg = [[] for _ in range(rows)]
-                            vers = [None for _ in range(rows)]
+                            vers = [[] for _ in range(rows)]
 
                         if(file_name[len(file_name)-3:]!="csv"):
                             print("invalid command\n")
@@ -109,13 +109,13 @@ class Wrapper:
                                             if(current_version[0]=='^' or current_version[0]=='~'):
                                                 current_version = current_version[1:]
                                             bad_Ver = current_version>=curr_version
-                                            vers[ind] = current_version
+                                            vers[ind].append(current_version)
                                             if(not bad_Ver):
                                                 bad_pkg[ind].append(dependency)
                                             satisfy[ind] = ((satisfy[ind]) and (current_version >= curr_version))
 
                                     except:
-                                        print("Couldn't open package.json")
+                                        bad_pkg[ind].append(dependency)
                                         satisfy[ind]  = False
 
                                         
@@ -128,7 +128,7 @@ class Wrapper:
                             df['could_connect'] = status
                             df['version'] = vers
                             df['version_satisfied'] = satisfy
-                            df['outdated packages'] = bad_pkg
+                            df['outdated/absent packages'] = bad_pkg
                             df.to_csv("../outputs/output.csv", index = False)
                             print("""-------------------------------------\nOutput stored in ./outputs/output.csv\n--------------------------------------\n""")
 
