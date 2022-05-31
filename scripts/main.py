@@ -5,7 +5,7 @@ import subprocess
 from pynpm import NPMPackage
 import requests
 import json
-
+import os.path
 
 class Wrapper:
 
@@ -40,42 +40,54 @@ class Wrapper:
 
             else:
                 lst = command.split(" ")
-                if("-update" in lst):
-                    file_name = lst[2]
-                    df = pd.read_csv(path + file_name)
-                    # CLONE REPO, USE NPM UPDATE, CREATE A PR
-                    continue
-
+                try:
+                    if("-update" in lst):
+                        file_name = lst[2]
+                        df = pd.read_csv(path + file_name)
+                        # CLONE REPO, USE NPM UPDATE, CREATE A PR
+                        continue
+                except:
+                    print("couldn't open input.csv")
+                    os.exit(0)
                 else:
                     if((len(lst)<4) or (lst[0]!='depy') or (lst[1]!='-i')):    
                         print("invalid command\n")
                         continue
                     
                     else:
-                        status = []
-                        satisfy = []
-                        file_name = lst[2]
-                        df = pd.read_csv(path + file_name)
+                        file_name = path + lst[2]
+                        df, rows, cols, packages, satisfy, status, bad_pkg, vers = None, None,None, None,None, None, None, None
+                        if(not os.path.exists(file_name)):    
+                            print("Invalid input file. Make sure the input.csv is present in ./inputs folder\n")
+                            continue
+
+                        else:
+                            df = pd.read_csv(file_name)
+                            rows, cols = df.shape
+                            packages = lst[3:]
+                            satisfy = [True for _ in range(rows)]
+                            status = [True for _ in range(rows)]
+                            bad_pkg = [[] for _ in range(rows)]
+                            vers = [None for _ in range(rows)]
+
                         if(file_name[len(file_name)-3:]!="csv"):
                             print("invalid command\n")
                             continue
                         
-                        rows, cols = df.shape
-                        packages = lst[3:]
                         for pkg in packages:
                             raw_path = "https://raw.githubusercontent.com/"
                             at_index = pkg.find('@')
                             dependency = pkg[0:at_index]
                             curr_version = pkg[at_index+1:]
-                            print(dependency, curr_version)
+                            print("Checking package: "+dependency + " for version: "+curr_version)
                             npm_call = 'npm show ' + dependency + ' version' 
                             latest_ver = subprocess.check_output(npm_call, shell=True)
                             output = latest_ver.decode('utf-8')
-                            
+
+                            ind = 0
                             for i in range(rows):                            
                                 repo_name = df.iloc[i, 0]
                                 repo_url = raw_path + df.iloc[i, 1][19:] +'/main/package.json'
-
                                 try:
                                     fetch_url = urllib.request.urlopen(repo_url)
                                     con_status = fetch_url.getcode()
@@ -85,7 +97,7 @@ class Wrapper:
                                         response = requests.get(repo_url)
                                         # write to file
                                         file.write(response.content)
-                                        status.append("successfull connection")
+                                        status[ind] = ((status[ind]) and True)
 
                                     try:
                                         with open('package.json') as json_file:
@@ -96,22 +108,32 @@ class Wrapper:
                                             
                                             if(current_version[0]=='^' or current_version[0]=='~'):
                                                 current_version = current_version[1:]
-
-                                            satisfy.append(current_version >= curr_version)
+                                            bad_Ver = current_version>=curr_version
+                                            vers[ind] = current_version
+                                            if(not bad_Ver):
+                                                bad_pkg[ind].append(dependency)
+                                            satisfy[ind] = ((satisfy[ind]) and (current_version >= curr_version))
 
                                     except:
                                         print("Couldn't open package.json")
-                                        satisfy.append(False)
+                                        satisfy[ind]  = False
 
                                         
                                 except:
-                                    status.append("invalid url")
-                                    satisfy.append(False)
-                        print(status)
-                        print(satisfy)
-                        df['tracking_status'] = status
-                        df['satisfy'] = satisfy
-                        df.to_csv("../outputs/output.csv", index = False) 
+                                    status[ind] = False
+                                    satisfy[ind] = False
+
+                                ind +=1
+                        try:
+                            df['could_connect'] = status
+                            df['version'] = vers
+                            df['version_satisfied'] = satisfy
+                            df['outdated packages'] = bad_pkg
+                            df.to_csv("../outputs/output.csv", index = False)
+                            print("""-------------------------------------\nOutput stored in ./outputs/output.csv\n--------------------------------------\n""")
+
+                        except:
+                            print("Could not process input")
 
 
                                 
