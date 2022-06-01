@@ -4,3 +4,4 @@
 4. Works with private repositories as well
 5. For the tracking command, we don't clone the repo (to save space and data)
 6. For updating, Clone a repo locally, create a new branch in the name of "de-py-ndency bot" and make a PR
+7. Make sure you know your Username and have generated a Personal Access Token

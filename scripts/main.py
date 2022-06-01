@@ -2,43 +2,15 @@ import pandas as pd
 import urllib.request
 import os
 import subprocess
-from pynpm import NPMPackage
 import requests
 import json
 import os.path
 import git
 from git import Repo
-# import glob
+import random
 import shutil
 import stat
-
-# def create_pull_request(project_name, repo_name, title, description, head_branch, base_branch, git_token, gh_session):
-#     print("call me hello")
-#     """Creates the pull request for the head_branch against the base_branch"""
-#     git_pulls_api = "https://github.com/api/v3/repos/{0}/{1}/pulls".format(
-#         project_name,
-#         repo_name)
-#     headers = {
-#         "Authorization": "token {0}".format(git_token),
-#         "Content-Type": "application/json"}
-
-#     payload = {
-#         "title": title,
-#         "body": description,
-#         "head": head_branch,
-#         "base": base_branch,
-#     }
-#     print(gh_session)
-#     r = gh_session.post(
-#         git_pulls_api,
-#         headers = headers,
-#         data = json.dumps(payload))
-
-#     if not r.ok:
-#         print("Request Failed: {0}".format(r.text))
-    
-#     print("asdasdas", r)
-
+from github import Github
 
 class Wrapper:
 
@@ -66,7 +38,7 @@ class Wrapper:
                 1. depy -i filename.csv package@version
                 2. depy -update -i filename.csv package@version
                 3. exit
-                4. documentation""")
+                """)
                 pass
 
             elif(command=="exit"):
@@ -100,7 +72,6 @@ class Wrapper:
                         
                         username = input("Enter your Github username: ")
                         # from https://github.com/user/settings/tokens
-                        # token = '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'
                         token = input("Enter your Personal Access Token (check https://github.com/settings/tokens): ")
                         repos_url = 'https://api.github.com/user/repos'
 
@@ -120,22 +91,23 @@ class Wrapper:
                             at_index = pkg.find('@')
                             dependency = pkg[0:at_index]
                             curr_version = pkg[at_index+1:]
+
                             print("Checking package: " + dependency + " for version: " + curr_version)
                             
                             ind = 0
-                            for i in range(rows):                            
+                            for i in range(rows):                
+                                cloned_link = df.iloc[i, 1][0:19] + username + df.iloc[i, 1][26:]
                                 repo_name = df.iloc[i, 0]
                                 repo_url = raw_path + df.iloc[i, 1][19:] +'/main/package.json'
                                 try:
                                     fetch_url = urllib.request.urlopen(repo_url)
                                     con_status = fetch_url.getcode()
-                                    # print(repo_url)
                                     r = requests.get(repo_url, allow_redirects=True)
                                     with open('package.json', "wb") as file:
                                         response = requests.get(repo_url)
                                         file.write(response.content)
                                         status[ind] = ((status[ind]) and True)
-                                        # print("opened successully")
+                                        print("opened successully")
                                     try:
                                         with open('package.json') as json_file:
                                             data = json.load(json_file)
@@ -147,10 +119,16 @@ class Wrapper:
                                                 current_version = current_version[1:]
                                             bad_Ver = current_version >= curr_version
                                             vers[ind].append(current_version)
-                                            print(repo_url)
+                                            print(cloned_link, bad_Ver)
                                             if(not bad_Ver):
+
+                                                gg = Github(username, token)
+                                                github_user = gg.get_user()
+                                                repo = gg.get_repo(df.iloc[i, 1][19:])
+                                                myfork = github_user.create_fork(repo)
+                                                print(myfork)
                                                 try:
-                                                    Repo.clone_from(df.iloc[i, 1], "repos/")
+                                                    Repo.clone_from(cloned_link, "../repos/")
                                                     print("Repo cloned successfully in ../repos/")
 
                                                 except:
@@ -159,17 +137,31 @@ class Wrapper:
                                                 bad_pkg[ind].append(dependency)
                                                 # UPDATE THE VERSION USING SUBPROCESS
                                                 
+                                                
+
                                                 npm_call = 'npm install ' + dependency + '@'+curr_version
-                                                # print(npm_call) 
-                                                subprocess.check_call(npm_call, shell=True, cwd = "repos/")
-                                                # latest_ver = subprocess.check_output("ls", shell=True, cwd="repos/")
-                                                # output = latest_ver.decode('utf-8')
+                                                print(npm_call) 
+                                                subprocess.check_call(npm_call, shell=True, cwd = "../repos/")
+                                                subprocess.check_call("git add .", shell=True, cwd = "../repos/")
+                                                print("added")
+                                                subprocess.check_call("git commit -m 'depyndency-bot'", shell=True, cwd = "../repos/")
+                                                print("committed")
+                                                subprocess.check_call("git push origin main", shell=True, cwd = "../repos/")
+                                                print("pushed")
                                                 update_pkg[ind].append(dependency)
-
-                                                # CREATING PR
-                                                create_pull_request("octocat", "Hello-World", "test API call", "ignore pls", "master", "test", token, gh_session)
-
-                                                # print(output)
+                                                s = requests.Session()
+                                                ttl = "chores: updated "+dependency+" from version: "+str(current_version)+" to : "+ str(curr_version)
+                                                data1 = json.dumps({"title" : ttl , "body":"Please accept changes by de-py-ndency bot at", "head" : "Rohitashwadutta:main", "base" : "main"})
+                                                auth1 = {"Authorization" : "token " + token}
+                                                print("started request")
+                                                pr_url = "https://api.github.com/repos/" + df.iloc[i, 1][19:]+"/pulls"
+                                                print(pr_url)
+                                                r = s.post(pr_url, headers = auth1, data = data1)
+                                                print(r.text)
+                                                temp = r.json()["html_url"]
+                                                
+                                                pr_links[ind] = temp
+                                                print("pr raised")
 
                                             satisfy[ind] = ((satisfy[ind]) and (current_version >= curr_version))
                                             
@@ -199,11 +191,7 @@ class Wrapper:
                          
                         if os.path.isfile('package.json'):
                             os.remove('package.json')
-                        try:
-                            p = "repos/"                            
 
-                        except OSError as e:
-                            print("Error: %s - %s." % (e.filename, e.strerror))
                         continue
 
                     else:
@@ -285,7 +273,8 @@ class Wrapper:
                                 print("""-------------------------------------\nOutput stored in ./outputs/output.csv\n--------------------------------------\n""")
                             except:
                                 print("Could not track")
-                            os.remove('package.json')
+                            if os.path.isfile('package.json'):
+                                os.remove('package.json')
                 except:
                     print("Could not process input")                         
 

@@ -1,4 +1,4 @@
 name,repo,could_connect,version,version_satisfied,outdated/absent packages,updated packages,PR link
 dyte-react-sample-app,https://github.com/dyte-in/react-sample-app/,True,['0.24.0'],True,[],[],
-dyte-js-sample-app,https://github.com/dyte-in/javascript-sample-app,True,['0.21.1'],False,['axios'],['axios'],
+dyte-js-sample-app,https://github.com/dyte-in/javascript-sample-app,True,['0.21.1'],False,['axios'],['axios'],https://github.com/dyte-in/javascript-sample-app/pull/381
 dyte-sample-app-backend,https://github.com/dyte-in/backend-sample-app,True,['0.23.0'],True,[],[],
