@@ -112,7 +112,7 @@ class Wrapper:
                             print("Could not login, check your credentials and internet connection")
 
                         try:
-                            Repo.clone_from("https://github.com/dyte-in/react-sample-app/", "../repos/")
+                            Repo.clone_from("https://github.com/dyte-in/react-sample-app/", "repos/")
                             print("Repo cloned successfully in ../repos/")
 
                         except:
@@ -132,13 +132,13 @@ class Wrapper:
                                 try:
                                     fetch_url = urllib.request.urlopen(repo_url)
                                     con_status = fetch_url.getcode()
-                                    print(repo_url)
+                                    # print(repo_url)
                                     r = requests.get(repo_url, allow_redirects=True)
                                     with open('package.json', "wb") as file:
                                         response = requests.get(repo_url)
                                         file.write(response.content)
                                         status[ind] = ((status[ind]) and True)
-                                        print("opened successully")
+                                        # print("opened successully")
                                     try:
                                         with open('package.json') as json_file:
                                             data = json.load(json_file)
@@ -151,19 +151,21 @@ class Wrapper:
 
                                             bad_Ver = current_version>=curr_version
                                             vers[ind].append(current_version)
-                                            print(bad_Ver)
+                                            # print(bad_Ver)
                                             if(not bad_Ver):
                                                 bad_pkg[ind].append(dependency)
                                                 # UPDATE THE VERSION USING SUBPROCESS
+                                                
                                                 npm_call = 'npm install ' + dependency + '@'+curr_version 
-                                                latest_ver = subprocess.check_output(npm_call, shell=True)
-                                                output = latest_ver.decode('utf-8')
+                                                # subprocess.check_call(npm_call, shell=True, cwd = "repos/")
+                                                # latest_ver = subprocess.check_output(npm_call, shell=True)
+                                                # output = latest_ver.decode('utf-8')
                                                 update_pkg[ind].append(dependency)
 
                                                 # CREATING PR
                                                 # create_pull_request("octocat", "Hello-World", "test API call", "ignore pls", "master", "test", token, gh_session)
 
-                                                print(output)
+                                                # print(output)
 
                                             satisfy[ind] = ((satisfy[ind]) and (current_version >= curr_version))
 
@@ -197,7 +199,6 @@ class Wrapper:
                             continue
                         
                         else:
-                            print("ghusna")
                             file_name = path + lst[2]
                             df, rows, cols, packages, satisfy, status, bad_pkg, vers = None, None,None, None,None, None, None, None
                             if(not os.path.exists(file_name)):    
