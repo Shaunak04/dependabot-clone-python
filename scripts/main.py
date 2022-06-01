@@ -8,7 +8,9 @@ import json
 import os.path
 import git
 from git import Repo
-
+# import glob
+import shutil
+import stat
 
 # def create_pull_request(project_name, repo_name, title, description, head_branch, base_branch, git_token, gh_session):
 #     print("call me hello")
@@ -111,12 +113,7 @@ class Wrapper:
                         except:
                             print("Could not login, check your credentials and internet connection")
 
-                        try:
-                            Repo.clone_from("https://github.com/dyte-in/react-sample-app/", "repos/")
-                            print("Repo cloned successfully in ../repos/")
 
-                        except:
-                            print("Couldn't clone repo, check if you have permissions/access")
 
                         for pkg in packages:
                             raw_path = "https://raw.githubusercontent.com/"
@@ -148,26 +145,34 @@ class Wrapper:
                                             
                                             if(current_version[0]=='^' or current_version[0]=='~'):
                                                 current_version = current_version[1:]
-
-                                            bad_Ver = current_version>=curr_version
+                                            bad_Ver = current_version >= curr_version
                                             vers[ind].append(current_version)
-                                            # print(bad_Ver)
+                                            print(repo_url)
                                             if(not bad_Ver):
+                                                try:
+                                                    Repo.clone_from(df.iloc[i, 1], "repos/")
+                                                    print("Repo cloned successfully in ../repos/")
+
+                                                except:
+                                                    print("Couldn't clone repo, check if you have permissions/access")
+
                                                 bad_pkg[ind].append(dependency)
                                                 # UPDATE THE VERSION USING SUBPROCESS
                                                 
-                                                npm_call = 'npm install ' + dependency + '@'+curr_version 
-                                                # subprocess.check_call(npm_call, shell=True, cwd = "repos/")
-                                                # latest_ver = subprocess.check_output(npm_call, shell=True)
+                                                npm_call = 'npm install ' + dependency + '@'+curr_version
+                                                # print(npm_call) 
+                                                subprocess.check_call(npm_call, shell=True, cwd = "repos/")
+                                                # latest_ver = subprocess.check_output("ls", shell=True, cwd="repos/")
                                                 # output = latest_ver.decode('utf-8')
                                                 update_pkg[ind].append(dependency)
 
                                                 # CREATING PR
-                                                # create_pull_request("octocat", "Hello-World", "test API call", "ignore pls", "master", "test", token, gh_session)
+                                                create_pull_request("octocat", "Hello-World", "test API call", "ignore pls", "master", "test", token, gh_session)
 
                                                 # print(output)
 
                                             satisfy[ind] = ((satisfy[ind]) and (current_version >= curr_version))
+                                            
 
                                     except:
                                         bad_pkg[ind].append(dependency)
@@ -190,11 +195,19 @@ class Wrapper:
                             print("""-------------------------------------\nOutput stored in ./outputs/update.csv\n--------------------------------------\n""")
 
                         except:
-                            print("Could not process input") 
+                            print("Could not process input")
+                         
+                        if os.path.isfile('package.json'):
+                            os.remove('package.json')
+                        try:
+                            p = "repos/"                            
+
+                        except OSError as e:
+                            print("Error: %s - %s." % (e.filename, e.strerror))
                         continue
 
                     else:
-                        if((len(lst)<4) or (lst[0]!='depy') or (lst[1]!='-i')):    
+                        if((len(lst)<4) or (lst[0]!='depy') or (lst[1]!='-i')):
                             print("invalid command\n")
                             continue
                         
@@ -272,6 +285,7 @@ class Wrapper:
                                 print("""-------------------------------------\nOutput stored in ./outputs/output.csv\n--------------------------------------\n""")
                             except:
                                 print("Could not track")
+                            os.remove('package.json')
                 except:
                     print("Could not process input")                         
 
